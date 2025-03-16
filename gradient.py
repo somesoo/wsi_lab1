@@ -7,9 +7,9 @@ import matplotlib as plt
 # ax^2+bx+c
 # d/dx 2ax+b
 
-# funkcja kosztu -> suma kwadratów różnicy pomiędzy właściwą a przewidywaną wartością 
+# funkcja kosztu -> suma kwadratów różnicy pomiędzy właściwą a przewidywaną wartością
+
 
 def cost_function(true, predicted):
-    cost = np.sum((true - predicted)**2) / len (true)
+    cost = np.sum((true - predicted) ** 2) / len(true)
     return cost
-
