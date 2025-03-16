@@ -2,37 +2,40 @@ import numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from autograd import grad
 
-
-# funkcja kwadratowa
-# ax^2+bx+c
-# d/dx 2ax+b
 
 
 def f_kwadratowa(x):
-    return np.sum(x**2, axis=-1)
+    return np.dot(x, x)  
 
 def f_rosenbrock(x):
     x = np.asarray(x)
-    return np.sum(100 * (x[..., 1:] - x[..., :-1]**2)**2 + (1 - x[..., :-1])**2, axis=-1)
+    return np.dot(100 * (x[1:] - x[:-1]**2)**2 + (1 - x[:-1])**2, np.ones_like(x[:-1]))
 
 def f_ackley(x):
-    n = x.shape[-1]
-    return -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2, axis=-1) / n)) - \
-           np.exp(np.sum(np.cos(2 * np.pi * x), axis=-1) / n) + 20 + np.e
+    n = x.shape[0]
+    term1 = -20 * np.exp(-0.2 * np.sqrt(np.dot(x, x) / n))
+    term2 = -np.exp(np.sum(np.cos(2 * np.pi * x)) / n)
+    return term1 + term2 + 20 + np.e
+
 
 
 def wykresy_funkcji_test():
-
     # Zakres wartości dla wykresów 2D
     x_vals = np.linspace(-5, 5, 100)
     y_vals = np.linspace(-5, 5, 100)
     X, Y = np.meshgrid(x_vals, y_vals)
 
     # Obliczenie wartości funkcji dla siatki punktów
-    Z_quad = f_kwadratowa(np.stack([X, Y], axis=-1))
-    Z_rosen = f_rosenbrock(np.stack([X, Y], axis=-1))
-    Z_ackley = f_ackley(np.stack([X, Y], axis=-1))
+    Z_quad = np.array([f_kwadratowa(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
+    Z_quad = Z_quad.reshape(X.shape)
+    
+    Z_rosen = np.array([f_rosenbrock(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
+    Z_rosen = Z_rosen.reshape(X.shape)
+    
+    Z_ackley = np.array([f_ackley(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
+    Z_ackley = Z_ackley.reshape(X.shape)
 
     # Tworzenie wykresów konturowych
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
@@ -62,10 +65,14 @@ def wykresy_funkcji_test():
     ax.set_ylabel("y")
 
     plt.show()
-
+    
+# Funkcja licząca pochodną
+wykresy_funkcji_test()
+gradient_func = grad(f_kwadratowa)
+x_test = np.array([2.0])
+print(gradient_func(x_test))
 
 # funkcja kosztu -> suma kwadratów różnicy pomiędzy właściwą a przewidywaną wartością
-
 
 def cost_function(true, predicted):
     cost = np.sum((true - predicted) ** 2) / len(true)
