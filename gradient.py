@@ -3,11 +3,11 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from autograd import grad
+import time
 
 
 
-
-def f_kwadratowa(x):
+def f_square(x):
     return np.dot(x, x)  
 
 def f_rosenbrock(x):
@@ -71,29 +71,31 @@ def wykresy_funkcji_test():
     plt.show()
 
 # Funkcja licząca pochodną
-wykresy_funkcji_test()
-gradient_func = grad(f_ackley)
-x_test = np.array([1.0, 2.0])
-print(gradient_func(x_test))
+# wykresy_funkcji_test()
 
-# funkcja kosztu -> suma kwadratów różnicy pomiędzy właściwą a przewidywaną wartością
 
-def cost_function(true, predicted):
-    cost = np.sum((true - predicted) ** 2) / len(true)
-    return cost
+def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6):
+    # eval_func funkcja do liczenia
+    # x0 punkt startowy
+    # learning_rate krok uczenia
+    # iterations maksymalna liczba iteracji
+    # stop_condition_2 wartość która wystarczy jako bliska
 
-# def solver(
-    # eval_func: Callable[[Sequence[float]], float],
-    # x0: Sequence[float],
-    # params: SolverParameters,
-    #...
-# ) -> solver_result:
-    # x_current
-    # iteration
-    # max_iteration
+    gradient_func = grad(eval_func)
+    iterations = iterations
+    learning_rate = learning_rate
+    x = np.array(x0, dtype=np.float64)
 
-def gradient_prosty(stop_condition_1, stop_condition_2, iterations, ):
-    
-    
-    
-    print("func")
+    previous = []
+
+    for i in range(iterations):
+        gradient_x = gradient_func(x)
+        x = x - learning_rate * gradient_x
+        previous.append(gradient_func(x))
+
+        if i > 0 and abs(previous[-1] - previous[-2]) < stop_condition_2:
+            break
+
+    return x, previous
+
+
