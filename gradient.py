@@ -8,7 +8,7 @@ import time
 
 
 def f_square(x):
-    return np.dot(x, x)  
+    return np.dot(x, x)
 
 def f_rosenbrock(x):
     x = np.asarray(x)
@@ -99,3 +99,19 @@ def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition
     return x, previous
 
 
+alphas = [1, 10, 100]
+x0 = np.array([5.0, -3.0])
+
+plt.figure(figsize=(10, 5))
+
+for alpha in alphas:
+    start_time = time.time()
+    _, history = solver(f_square, x0=alpha)
+    elapsed_time = time.time() - start_time
+    plt.plot(history, label=f'α={alpha}, czas={elapsed_time:.4f}s')
+
+plt.xlabel("Iteracje")
+plt.ylabel("Wartość funkcji celu")
+plt.title("Zbieżność solvera dla f")
+plt.legend()
+plt.show()
