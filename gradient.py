@@ -1,8 +1,9 @@
-import numpy as np
+import autograd.numpy as np
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from autograd import grad
+
 
 
 
@@ -14,10 +15,13 @@ def f_rosenbrock(x):
     return np.dot(100 * (x[1:] - x[:-1]**2)**2 + (1 - x[:-1])**2, np.ones_like(x[:-1]))
 
 def f_ackley(x):
-    n = x.shape[0]
-    term1 = -20 * np.exp(-0.2 * np.sqrt(np.dot(x, x) / n))
+    n = len(x)
+    norm_x = np.sqrt(np.dot(x, x) / n)
+    term1 = -20 * np.exp(-0.2 * norm_x)
     term2 = -np.exp(np.sum(np.cos(2 * np.pi * x)) / n)
+
     return term1 + term2 + 20 + np.e
+
 
 
 
@@ -65,11 +69,11 @@ def wykresy_funkcji_test():
     ax.set_ylabel("y")
 
     plt.show()
-    
+
 # Funkcja licząca pochodną
 wykresy_funkcji_test()
-gradient_func = grad(f_kwadratowa)
-x_test = np.array([2.0])
+gradient_func = grad(f_ackley)
+x_test = np.array([1.0, 2.0])
 print(gradient_func(x_test))
 
 # funkcja kosztu -> suma kwadratów różnicy pomiędzy właściwą a przewidywaną wartością
