@@ -69,7 +69,7 @@ def wykresy_funkcji_test():
 wykresy_funkcji_test()
 
 
-def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6):
+def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6, *arg):
     # eval_func funkcja do liczenia
     # x0 punkt startowy
     # learning_rate krok uczenia
@@ -80,18 +80,19 @@ def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition
     iterations = iterations
     learning_rate = learning_rate
     x = np.array(x0, dtype=np.float64)
-
+    trajectory = [x.copy()]
     previous = []
 
     for i in range(iterations):
-        gradient_x = gradient_func(x)
+        gradient_x = gradient_func(x, *arg)
         x = x - learning_rate * gradient_x
-        previous.append(gradient_func(x))
+        previous.append(eval_func(x, *arg))
+        trajectory.append(x.copy())
 
-        if i > 0 and abs(previous[-1] - previous[-2]) < stop_condition_2:
+        if np.linalg.norm(gradient_x) < stop_condition_2:
             break
 
-    return x, previous
+    return x, previous, np.array(trajectory)
 
 
 alphas = [1, 10, 100]
