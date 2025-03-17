@@ -7,15 +7,15 @@ import time
 
 
 
-def f_square(x, a=1, b=0):
-    return np.sum(a * x**2 + b * x)
+def f_square(x: np.ndarray) -> float:
+    return np.sum(x**2)
 
-def f_rosenbrock(x, A=100, B=1):
-    return np.sum(A * (x[1:] - x[:-1]**2)**2 + (B - x[:-1])**2)
+def f_rosenbrock(x: np.ndarray) -> float:
+    return np.sum(100 * (x[1:] - x[:-1]**2)**2 + (1 - x[:-1])**2)
 
-def f_ackley(x, A=20, B=0.2, C=2 * np.pi):
-    n = len(x)
-    return -A * np.exp(-B * np.sqrt(np.sum(x**2) / n)) - np.exp(np.sum(np.cos(C * x)) / n) + A + np.exp(1)
+def f_ackley(x: np.ndarray) -> float:
+    n = x.shape[0]
+    return -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2) / n)) - np.exp(np.sum(np.cos(2 * np.pi * x)) / n) + 20 + np.e
 
 
 
@@ -69,7 +69,7 @@ def wykresy_funkcji_test():
 wykresy_funkcji_test()
 
 
-def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6, *arg):
+def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6):
     # eval_func funkcja do liczenia
     # x0 punkt startowy
     # learning_rate krok uczenia
@@ -77,37 +77,80 @@ def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition
     # stop_condition_2 wartość która wystarczy jako bliska
 
     gradient_func = grad(eval_func)
-    iterations = iterations
-    learning_rate = learning_rate
-    x = np.array(x0, dtype=np.float64)
+    x = np.array(x0)
     trajectory = [x.copy()]
-    previous = []
 
     for i in range(iterations):
-        gradient_x = gradient_func(x, *arg)
+        gradient_x = gradient_func(x)
         x = x - learning_rate * gradient_x
-        previous.append(eval_func(x, *arg))
+        x = np.clip(x, -10, 10)
         trajectory.append(x.copy())
 
         if np.linalg.norm(gradient_x) < stop_condition_2:
             break
 
-    return x, previous, np.array(trajectory)
+    return x, np.array(trajectory)
 
 
-alphas = [1, 10, 100]
-x0 = np.array([5.0, -3.0])
+n = 10
+alphas = [0.001, 0.010, 0.100]
+# ustawiony punkt startowy
+# x0 = np.array([5.0, 2.0])
+# losowy punkt startowy
+x0 = np.random.uniform(-10, 10, size=n)
+#x0 = np.clip(x0, -10, 10)
 
-plt.figure(figsize=(10, 5))
+functions = {
+    "Kwadratowa": (lambda x: f_square(x)),
+    "Rosenbrock": (lambda x: f_rosenbrock(x)),
+    "Ackley": (lambda x: f_ackley(x))
+}
 
-for alpha in alphas:
-    start_time = time.time()
-    _, history = solver(f_square, x0=alpha)
-    elapsed_time = time.time() - start_time
-    plt.plot(history, label=f'α={alpha}, czas={elapsed_time:.4f}s')
+# Uruchamianie optymalizacji bez wizualizacji
+results = {}
+for name, func in functions.items():
+    for alpha in alphas:
+        x_min, trajectory = solver(func, x0, alpha)
+        results[(name, alpha)] = x_min
 
-plt.xlabel("Iteracje")
-plt.ylabel("Wartość funkcji celu")
-plt.title("Zbieżność solvera dla f")
-plt.legend()
-plt.show()
+# Wypisanie wyników optymalizacji
+for (name, alpha), x_min in results.items():
+    print(f'Funkcja: {name}, alpha={alpha}, Optimum: {x_min}')
+
+
+# for name, func in functions.items():
+#     plt.figure(figsize=(8, 5))
+#     for alpha in alphas:
+#         _, values, _ = solver(func, x0, learning_rate=alpha)
+#         plt.plot(values, label=f'alpha={alpha}')
+    
+#     plt.title(f'Zbieżność - {name}')
+#     plt.xlabel('Iteracja')
+#     plt.ylabel('Wartość funkcji celu')
+#     plt.yscale('log')
+#     plt.legend()
+#     plt.grid()
+#     plt.show()
+
+# # Wykres trajektorii dla n=2 jeśli chcemy wizualizację w 2D
+# if n == 2:
+#     func_name = "Kwadratowa"  # Można zmienić na inną funkcję
+#     x_min, _, trajectory = solver(functions[func_name], x0, alpha=1)
+    
+#     # Siatka dla konturów
+#     x_vals = np.linspace(-10, 10, 100)
+#     y_vals = np.linspace(-10, 10, 100)
+#     X, Y = np.meshgrid(x_vals, y_vals)
+#     Z = np.array([[functions[func_name](np.array([x, y])) for x in x_vals] for y in y_vals])
+    
+#     plt.figure(figsize=(8, 6))
+#     plt.contour(X, Y, Z, levels=50, cmap='viridis')
+#     plt.plot(trajectory[:, 0], trajectory[:, 1], 'r-o', label='Ścieżka optymalizacji')
+#     plt.scatter(x0[0], x0[1], color='blue', marker='o', label='Start')
+#     plt.scatter(x_min[0], x_min[1], color='red', marker='x', label='Minimum')
+#     plt.title(f'Trajektoria optymalizacji - {func_name}')
+#     plt.xlabel('x1')
+#     plt.ylabel('x2')
+#     plt.legend()
+#     plt.grid()
+#     plt.show()
