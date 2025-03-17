@@ -172,3 +172,17 @@ if __name__ == "__main__":
             print(f"  Ostateczne f_opt = {result.f_opt:.6f}")
             print(f"  Ostateczne x_opt = {result.x_opt}")
             print(f"  Iterations = {result.iterations}, Success = {result.success}")
+
+    for func_name in results.keys():
+        plt.figure()
+        plt.title(f"Przebieg wartości {func_name}")
+        plt.xlabel("Iteracja")
+        plt.ylabel("Wartość funkcji")
+
+        # Rysujemy krzywą dla każdej alpha
+        for alpha in alphas:
+            solver_res = results[func_name][alpha]
+            plt.plot(range(solver_res.iterations), solver_res.history, label=f"alpha={alpha}")
+
+        plt.legend()
+        plt.show()
