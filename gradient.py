@@ -143,7 +143,7 @@ if __name__ == "__main__":
     max_iter = 20000
     tol = 1e-6
 
-    np.random.seed(65)
+    np.random.seed(11)
     x0 = np.random.uniform(-10, 10, size=n)
 
     test_funcs = [
