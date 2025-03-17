@@ -4,6 +4,8 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 from autograd import grad
 import time
+from dataclasses import dataclass
+from typing import Callable, Sequence, List
 
 
 
@@ -15,7 +17,7 @@ def f_rosenbrock(x: np.ndarray) -> float:
 
 def f_ackley(x: np.ndarray) -> float:
     n = x.shape[0]
-    return -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2) / n)) - np.exp(np.sum(np.cos(2 * np.pi * x)) / n) + 20 + np.e
+    return -20 * np.exp(-0.2 * np.sqrt(np.sum(x**2) / n)) - np.exp(np.sum(np.cos(2 * np.pi * x)) / n) + 20 + np.exp(1)
 
 
 
@@ -68,89 +70,105 @@ def wykresy_funkcji_test():
 # Funkcja licząca pochodną
 wykresy_funkcji_test()
 
+@dataclass
+class SolverParameters:
+    alpha: float
+    max_iter: int
+    tol: float
 
-def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6):
-    # eval_func funkcja do liczenia
-    # x0 punkt startowy
-    # learning_rate krok uczenia
-    # iterations maksymalna liczba iteracji
-    # stop_condition_2 wartość która wystarczy jako bliska
+@dataclass
+class SolverResult:
+    x_opt: np.ndarray
+    f_opt: float
+    iterations: int
+    success: bool
+    history: List[float]
 
-    gradient_func = grad(eval_func)
-    x = np.array(x0)
-    trajectory = [x.copy()]
+def solver(
+    eval_func: Callable[[np.ndarray], float],
+    x0: Sequence[float],
+    params: SolverParameters
+) -> SolverResult:
+    
+    x = np.array(x0, dtype=float)
+    grad_func = grad(eval_func)
+    history = []
+    success = False
 
-    for i in range(iterations):
-        gradient_x = gradient_func(x)
-        x = x - learning_rate * gradient_x
-        x = np.clip(x, -10, 10)
-        trajectory.append(x.copy())
+    start_time = time.time()
+    
+    for i in range(params.max_iter):
+        f_val = eval_func(x)
+        history.append(f_val)
 
-        if np.linalg.norm(gradient_x) < stop_condition_2:
+        # Gradient
+        g = grad_func(x)
+
+        # Krok w przeciwną stronę do gradientu, z *przycięciem* do [-10,10]
+        x_next = x - params.alpha * g
+        x_next = np.clip(x_next, -10, 10)  # żeby nie "uciekać" w nieskończoność
+
+        # Jeśli różnica kolejnych punktów jest niewielka → stop
+        if np.linalg.norm(x_next - x) < params.tol:
+            success = True
+            x = x_next
             break
 
-    return x, np.array(trajectory)
-
-
-n = 10
-alphas = [0.001, 0.010, 0.100]
-# ustawiony punkt startowy
-# x0 = np.array([5.0, 2.0])
-# losowy punkt startowy
-x0 = np.random.uniform(-10, 10, size=n)
-#x0 = np.clip(x0, -10, 10)
-
-functions = {
-    "Kwadratowa": (lambda x: f_square(x)),
-    "Rosenbrock": (lambda x: f_rosenbrock(x)),
-    "Ackley": (lambda x: f_ackley(x))
-}
-
-# Uruchamianie optymalizacji bez wizualizacji
-results = {}
-for name, func in functions.items():
-    for alpha in alphas:
-        x_min, trajectory = solver(func, x0, alpha)
-        results[(name, alpha)] = x_min
-
-# Wypisanie wyników optymalizacji
-for (name, alpha), x_min in results.items():
-    print(f'Funkcja: {name}, alpha={alpha}, Optimum: {x_min}')
-
-
-# for name, func in functions.items():
-#     plt.figure(figsize=(8, 5))
-#     for alpha in alphas:
-#         _, values, _ = solver(func, x0, learning_rate=alpha)
-#         plt.plot(values, label=f'alpha={alpha}')
+        x = x_next
+        # warunek przerwania gdy wyniki są bez sensu
+        if not np.isfinite(f_val):
+            break
     
-#     plt.title(f'Zbieżność - {name}')
-#     plt.xlabel('Iteracja')
-#     plt.ylabel('Wartość funkcji celu')
-#     plt.yscale('log')
-#     plt.legend()
-#     plt.grid()
-#     plt.show()
+    end_time = time.time()
+    total_time = end_time - start_time
 
-# # Wykres trajektorii dla n=2 jeśli chcemy wizualizację w 2D
-# if n == 2:
-#     func_name = "Kwadratowa"  # Można zmienić na inną funkcję
-#     x_min, _, trajectory = solver(functions[func_name], x0, alpha=1)
+    f_opt = eval_func(x)
+    iterations = i + 1
+
+    print(f"Solver zakończony w {iterations} iteracjach (czas: {total_time:.4f}s). "
+          f"f_opt={f_opt:.4e}, ||x||={np.linalg.norm(x):.3f}, success={success}")
     
-#     # Siatka dla konturów
-#     x_vals = np.linspace(-10, 10, 100)
-#     y_vals = np.linspace(-10, 10, 100)
-#     X, Y = np.meshgrid(x_vals, y_vals)
-#     Z = np.array([[functions[func_name](np.array([x, y])) for x in x_vals] for y in y_vals])
-    
-#     plt.figure(figsize=(8, 6))
-#     plt.contour(X, Y, Z, levels=50, cmap='viridis')
-#     plt.plot(trajectory[:, 0], trajectory[:, 1], 'r-o', label='Ścieżka optymalizacji')
-#     plt.scatter(x0[0], x0[1], color='blue', marker='o', label='Start')
-#     plt.scatter(x_min[0], x_min[1], color='red', marker='x', label='Minimum')
-#     plt.title(f'Trajektoria optymalizacji - {func_name}')
-#     plt.xlabel('x1')
-#     plt.ylabel('x2')
-#     plt.legend()
-#     plt.grid()
-#     plt.show()
+    return SolverResult(
+        x_opt=x,
+        f_opt=f_opt,
+        iterations=iterations,
+        success=success,
+        history=history
+    )
+
+if __name__ == "__main__":
+
+    # Parametry ogólne
+    n = 10
+    max_iter = 20000
+    tol = 1e-6
+
+    np.random.seed(65)
+    x0 = np.random.uniform(-10, 10, size=n)
+
+    test_funcs = [
+        ("Quadratic", f_square),
+        ("Rosenbrock", f_rosenbrock),
+        ("Ackley", f_ackley),
+    ]
+
+    alphas = [1e-3, 1e-4, 1e-5]
+
+    # results[func_name][alpha] = SolverResult
+    results = {}
+
+    # 1) Uruchamiamy solver dla każdej funkcji i każdej wartości alpha
+    for func_name, func in test_funcs:
+        results[func_name] = {}
+        print(f"\n=== Test funkcji {func_name} ===")
+
+        for alpha in alphas:
+            print(f"--- alpha={alpha} ---")
+            params = SolverParameters(alpha=alpha, max_iter=max_iter, tol=tol)
+            result = solver(func, x0, params)
+
+            results[func_name][alpha] = result  # Zachowujemy do późniejszego wykresu
+
+            print(f"  Ostateczne f_opt = {result.f_opt:.6f}")
+            print(f"  Ostateczne x_opt = {result.x_opt}")
+            print(f"  Iterations = {result.iterations}, Success = {result.success}")
