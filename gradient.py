@@ -7,20 +7,15 @@ import time
 
 
 
-def f_square(x):
-    return np.dot(x, x)
+def f_square(x, a=1, b=0):
+    return np.sum(a * x**2 + b * x)
 
-def f_rosenbrock(x):
-    x = np.asarray(x)
-    return np.dot(100 * (x[1:] - x[:-1]**2)**2 + (1 - x[:-1])**2, np.ones_like(x[:-1]))
+def f_rosenbrock(x, A=100, B=1):
+    return np.sum(A * (x[1:] - x[:-1]**2)**2 + (B - x[:-1])**2)
 
-def f_ackley(x):
+def f_ackley(x, A=20, B=0.2, C=2 * np.pi):
     n = len(x)
-    norm_x = np.sqrt(np.dot(x, x) / n)
-    term1 = -20 * np.exp(-0.2 * norm_x)
-    term2 = -np.exp(np.sum(np.cos(2 * np.pi * x)) / n)
-
-    return term1 + term2 + 20 + np.e
+    return -A * np.exp(-B * np.sqrt(np.sum(x**2) / n)) - np.exp(np.sum(np.cos(C * x)) / n) + A + np.exp(1)
 
 
 
@@ -32,7 +27,7 @@ def wykresy_funkcji_test():
     X, Y = np.meshgrid(x_vals, y_vals)
 
     # Obliczenie wartości funkcji dla siatki punktów
-    Z_quad = np.array([f_kwadratowa(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
+    Z_quad = np.array([f_square(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
     Z_quad = Z_quad.reshape(X.shape)
     
     Z_rosen = np.array([f_rosenbrock(np.array([x, y])) for x, y in zip(X.ravel(), Y.ravel())])
@@ -48,7 +43,7 @@ def wykresy_funkcji_test():
     ax = axes[0]
     cp = ax.contourf(X, Y, Z_quad, levels=50, cmap='viridis')
     fig.colorbar(cp, ax=ax)
-    ax.set_title("f_kwadratowa")
+    ax.set_title("f_square")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
 
@@ -71,7 +66,7 @@ def wykresy_funkcji_test():
     plt.show()
 
 # Funkcja licząca pochodną
-# wykresy_funkcji_test()
+wykresy_funkcji_test()
 
 
 def solver(eval_func, x0, learning_rate=0.0001, iterations=10000, stop_condition_2=1e-6):
